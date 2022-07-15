@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+  </head>
+  <body>
+    <h1>Login_User</h1>
+    <form id="reg-form">
+      <input
+        type="text"
+        autocomplete="off"
+        id="username"
+        placeholder="Username"
+      />
+      <input
+        type="password"
+        autocomplete="off"
+        id="password"
+        placeholder="Password"
+      />
+      <input type="submit" value="Submit Form" />
+    </form>
+
+    <script>
+      const form = document.getElementById("reg-form");
+      form.addEventListener("submit",login_user );
+
+      async function login_user(event) {
+        event.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        const result = await fetch('http://localhost:1900/api/log', {
+          method: "POST",
+          headers: {
+          	'Content-Type': 'application/json',
+          },
+          // headers: {
+          //   "Access-Control-Allow-Origin": "http://localhost:1900",
+          //   "Access-Control-Allow-Methods": "GET, POST, PUT",
+          //   "Content-Type": "text/plain",
+          // }, //"mode" : "no-cors",
+
+          body: JSON.stringify({
+            username,
+            password,
+          }),
+        }).then((res) => res.json());
+
+        if (result.status === "ok") {
+          // everythign went fine
+          console.log('Got the token: ', result.data)
+					localStorage.setItem('token', result.data)
+          alert("Success Login");
+        } else {
+          alert(result.error);
+          // console.log(error);
+        }
+      }
+    </script>
+  </body>
+</html>
