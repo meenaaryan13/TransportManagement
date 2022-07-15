@@ -2,9 +2,9 @@ var { Schema, model } = require("mongoose");
 
 const Employe_Ragistartion_Schema = new Schema({
   UserName:{type:String,require:true},
-  MobileNumber:{type: Number, require: true }, //
-  Email: { type: String, require: true, unique: true }, //
-  Password: { type: String, require: true }, //
+  MobileNumber:{type: Number, require: true }, 
+  Email: { type: String, require: true, unique: true }, 
+  Password: { type: String, require: true }, 
   Post:{type:Stirng,require:true},
 
   createdAt: { type: Date, default: Date.now() },
