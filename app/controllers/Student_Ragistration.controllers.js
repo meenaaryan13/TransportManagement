@@ -1,9 +1,20 @@
 const ragistration = require("../models/Student_Ragistration.models");
+const OtpVerification = require("../models/OtpVerification.models");
 const bcrypt = require("bcryptjs"); // Bcrypt require to convert normal text to hashcode
 // const router = require("express").Router();
 const jwt = require("jsonwebtoken"); // jwt to use user securties perpose to convert user information to decode
 const JWT_SECRET =
   "QAWSEDRFTGYHUJ!UYTREEXCRVBX!DCFVGH@@%%JBBBFKFBKJCBWJCBWQDQ^^BFEWF";
+
+const nodemailer = require("nodemailer");
+//Genrate mail otp
+var transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.Email,
+    pass: process.env.pass,
+  },
+});
 
 class Login {
   async register(req, res) {
@@ -37,25 +48,20 @@ class Login {
       return res.json({ status: "error", error: "Invalid password" });
     }
 
-
-    ragistration.findOne({MobileNumber}).then((user)=>{
-      if(user)
-      {
-        return res.status(400).json({ MobileNumber:"Mobile Number All ready ragisterd" });
+    ragistration.findOne({ MobileNumber }).then((user) => {
+      if (user) {
+        return res
+          .status(400)
+          .json({ MobileNumber: "Mobile Number All ready ragisterd" });
       }
-    })
+    });
 
     ragistration.findOne({ Email }).then((user) => {
       if (user) {
-         res
-          .status(400)
-          .json({ username:"Email All ready ragisterd" });
+        res.status(400).json({ username: "Email All ready ragisterd" });
       }
-      return
+      return;
     });
-
-
-
 
     if (plainTextPassword.length < 5) {
       return res.json({
@@ -63,7 +69,6 @@ class Login {
         error: "password too small, Should be atleast 6 charecter",
       });
     }
-
 
     if (!Branch || typeof Branch !== "string") {
       return res.json({ status: "error", error: "Invalid Branch" });
@@ -74,7 +79,6 @@ class Login {
     if (!Track || typeof Track !== "string") {
       return res.json({ status: "error", error: "Invalid Track" });
     }
-
 
     const password = await bcrypt.hash(plainTextPassword, 10);
 
@@ -94,7 +98,17 @@ class Login {
 
       console.log(response);
       res.send(response);
-      await response.save();
+      await response
+        .save()
+        .then((result) => {
+          otpverifhy(result, res);
+        })
+        .catch((err) => {
+          res.json({
+            status: "verfhey",
+            message: " some errors",
+          });
+        });
       res.status(200);
       //  res.json({message:'ok'});
       res.end(response);
@@ -158,6 +172,50 @@ class Login {
     } catch (error) {
       console.log(error);
       res.json({ status: "error", error: "" });
+    }
+  }
+
+  async otpverifhy({ _id, Email }, res) {
+    const otp = `${Math.floor(1000 + Math.random() * 9000)}`;
+    try {
+      var mailOptions = {
+        from: process.env.Email, // sender address
+        to: `${Email}`, // list of receivers
+        subject: "Hello ✔", // Subject line
+        text: "Hello world ?", // plaintext body
+        html: `Please verifhy this otp <b>${otp} </b>and fheel`, // html body
+      };
+
+      const newOtpverification = new OtpVerification.create({
+        userId: _id,
+        otp: otp,
+        createAt: Date.now(),
+        expiresAt: Date.now + 10000,
+      });
+
+      await newOtpverification.save();
+
+      await transporter.sendMail(mailOptions);
+
+      // send mail with defined transport object
+      transporter.sendMail(mailOptions, (error) => {
+        if (error) {
+          console.log("it has error ", error);
+        } else {
+          console.log("Email has sent ");
+        }
+      });
+
+      res.json({
+        status: "Pending",
+        message: "Verification otp email sent",
+        data: {
+          userId: _id,
+          Email,
+        },
+      });
+    } catch (error) {
+      res.status(501).json(error);
     }
   }
 }
